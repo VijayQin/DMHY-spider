@@ -100,42 +100,63 @@ class DMHY_DataBase:
                 con.commit()
 
 
-    def start_requests(self) :
-        # return 0表示下载完成
+    def fetch_update_list(self) :
+        """
+        return update list.
+        """
         user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
         headers = {'User-Agent': user_agent}
         page = 1
+        update_list = []
+        while True :
+            # time.sleep(self.time_delay)
+            response = requests.get(self.url + str(page), headers)
+            tree = html.fromstring(response.content)
+            response.close()
+            data_list = tree.xpath('//table[@id="topic_list"]/tbody/tr')
+            i = 0
+            for data in data_list :
+                date = data.xpath('td[1]/span/text()')[0]
+                trial = self.date_justify(date, page)
+                if 1 == trial :
+                    pass
+                elif 0 == trial :
+                    update_list.append(data)
+                else :
+                    return update_list
+            page = page + 1
+
+
+    def start_requests(self) :
+        """
+        Start update tasks.
+
+        return 0表示下载完成
+        """
+        print u"正在获取更新列表..."
+        update_list = self.fetch_update_list()
+        update_num = len(update_list)
+        print u"本次共有%d个更新" % update_num
         with sqlite3.connect(self.sqlite_db) as con :
-            while True :
-                time.sleep(self.time_delay)
-                response = requests.get(self.url + str(page), headers)
-                tree = html.fromstring(response.content)
-                response.close()
-                data = tree.xpath('//table[@id="topic_list"]/tbody/tr')
-                i = 0
-                while i < len(data) :
-                    date = data[i].xpath('td[1]/span/text()')[0]
-                    trial = self.date_justify(date, page)
-                    if 1 == trial :
-                        i = i + 1
-                    elif 0 == trial :
-                        self.parse_item(data[i], con)
-                        i = i + 1
-                    else :
-                        insert_sql = '''
-                            insert into DMHY_DataBase
-                                values(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            '''
-                        index = 0
-                        cu = con.cursor()
-                        while index < len(self.new_data) :
-                            cu.execute(insert_sql, self.new_data[index])
-                            index = index + 1
-                        cu.close()
-                        con.commit()
-                        print u"内容更新完毕"
-                        return 0
-                page = page + 1
+            # Download updates
+            for i in range(update_num) :
+                print ""
+                print "已完成：%d/%d" % (i, update_num)
+                sys.stdout.write("\033[2F") # Cursor up one line
+                self.parse_item(update_list[i], con)
+            # Clean up out-of-date items
+            print u"正在清除过期的内容..."
+            insert_sql = '''
+                insert into DMHY_DataBase
+                    values(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                '''
+            cu = con.cursor()
+            for d in self.new_data :
+                cu.execute(insert_sql, d)
+            cu.close
+            con.commit()
+            print u"内容更新完毕"
+            return 0
 
 
     def date_justify(self, date, page) :
@@ -167,6 +188,8 @@ class DMHY_DataBase:
         item_uploader = data.xpath('td[9]/a/@href')[0]
         item_uploader = self.domain + item_uploader
         item_finish = False
+
+        print u"[正在下载] " + item_title
 
         # 为了不造成服务器太大负担, 所以每次请求间隔10s
         # 所以可能会出现,请求第二页的时候,已经有字幕组新上传了动画,此时第一页的最后几条会在第二页出现
@@ -226,6 +249,11 @@ class DMHY_DataBase:
             item = item + (item_uploader, item_html, item_attach, item_finish)
             self.new_data.insert(0, item)
         cu.close()
+
+        sys.stdout.write("\033[F") # Cursor up one line
+        sys.stdout.write("\033[K") # Clear to the end of line
+        print u"[完成] " + item_title
+        sys.stdout.write("\033[K") # Clear to the end of line
 
 
     def prune_title (self, path, fileName) :
@@ -287,7 +315,7 @@ if __name__ == '__main__':
 
     # sqlite_db = r"D:\Data\Desktop\Workspace\test\DMHY\DMHY.db"
     sqlite_db = os.path.join(path, 'DMHY.db')
-    time_delay = 10
+    time_delay = 0
 
     # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
     warehouse = path + r'\Warehouse'

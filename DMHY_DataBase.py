@@ -123,7 +123,7 @@ class DMHY_DataBase:
                         i = i + 1
                     else :
                         insert_sql = '''
-                            insert into DMHY_DataBase 
+                            insert into DMHY_DataBase
                                 values(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             '''
                         index = 0
@@ -246,30 +246,13 @@ class DMHY_DataBase:
     def formulate_folder_path(self, item_date, item_type, item_title) :
 
         item_datetime = datetime.datetime.strptime(item_date, r'%Y/%m/%d %H:%M')
-        path = os.path.join(self.warehouse, str(item_datetime.year))
-
-        if item_datetime.month < 10 :
-            path = os.path.join(path, '0' + str(item_datetime.month))
-        else :
-            path = os.path.join(path, str(item_datetime.month))
-
-        if item_datetime.day < 10 :
-            path = os.path.join(path, '0' + str(item_datetime.day))
-        else :
-            path = os.path.join(path, str(item_datetime.day))
-
-        path = os.path.join(path, item_type)
-
-        if item_datetime.hour < 10 :
-            path = os.path.join(path, '0' + str(item_datetime.hour))
-        else :
-            path = os.path.join(path, str(item_datetime.hour))
-
-        if item_datetime.minute < 10 :
-            path = path + '0' + str(item_datetime.minute)
-        else :
-            path = path + str(item_datetime.minute)
-        path = path + '_' + item_title
+        path = os.path.join(self.warehouse,
+                            str(item_datetime.year),
+                            '%02d' % item_datetime.month,
+                            '%02d' % item_datetime.day,
+                            '%02d02d_%s' % (item_datetime.hour,
+                                            item_datetime.minute,
+                                            item_title))
 
         return path
 

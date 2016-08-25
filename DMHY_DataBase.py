@@ -229,9 +229,9 @@ class DMHY_DataBase:
 
 
     def prune_title (self, path, fileName) :
-        file_path = path + '\\' +  fileName
+        file_path = os.path.join(path, fileName)
         if 260 <= len(file_path) :
-            file_path = path + '\\' + fileName[len(file_path)-259:]
+            file_path = os.path.join(path, fileName[len(file_path)-259:])
         return file_path
 
 
@@ -246,24 +246,24 @@ class DMHY_DataBase:
     def formulate_folder_path(self, item_date, item_type, item_title) :
 
         item_datetime = datetime.datetime.strptime(item_date, r'%Y/%m/%d %H:%M')
-        path = self.warehouse + '\\' + str(item_datetime.year)
+        path = os.path.join(self.warehouse, str(item_datetime.year))
 
         if item_datetime.month < 10 :
-            path = path + '\\0' + str(item_datetime.month)
+            path = os.path.join(path, '0' + str(item_datetime.month))
         else :
-            path = path + '\\' + str(item_datetime.month)
+            path = os.path.join(path, str(item_datetime.month))
 
         if item_datetime.day < 10 :
-            path = path + '\\0' + str(item_datetime.day)
+            path = os.path.join(path, '0' + str(item_datetime.day))
         else :
-            path = path + '\\' + str(item_datetime.day)
+            path = os.path.join(path, str(item_datetime.day))
 
-        path = path + '\\' + item_type
+        path = os.path.join(path, item_type)
 
         if item_datetime.hour < 10 :
-            path = path + '\\0' + str(item_datetime.hour)
+            path = os.path.join(path, '0' + str(item_datetime.hour))
         else :
-            path = path + '\\' + str(item_datetime.hour)
+            path = os.path.join(path, str(item_datetime.hour))
 
         if item_datetime.minute < 10 :
             path = path + '0' + str(item_datetime.minute)
@@ -303,11 +303,12 @@ if __name__ == '__main__':
     path = os.getcwd()
 
     # sqlite_db = r"D:\Data\Desktop\Workspace\test\DMHY\DMHY.db"
-    sqlite_db = path + r'\DMHY.db'
+    sqlite_db = os.path.join(path, 'DMHY.db')
     time_delay = 10
 
     # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
     warehouse = path + r'\Warehouse'
+    warehouse = os.path.join(path, 'Warehouse')
 
     print u'正在更新内容, 请稍后'
     DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)

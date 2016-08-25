@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug 23 19:25:58 2016
@@ -250,7 +250,7 @@ class DMHY_DataBase:
                             str(item_datetime.year),
                             '%02d' % item_datetime.month,
                             '%02d' % item_datetime.day,
-                            '%02d02d_%s' % (item_datetime.hour,
+                            '%02d%02d_%s' % (item_datetime.hour,
                                             item_datetime.minute,
                                             item_title))
 

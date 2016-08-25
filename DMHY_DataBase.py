@@ -318,7 +318,6 @@ if __name__ == '__main__':
     time_delay = 0
 
     # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
-    warehouse = path + r'\Warehouse'
     warehouse = os.path.join(path, 'Warehouse')
 
     print u'正在更新内容, 请稍后'

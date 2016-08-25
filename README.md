@@ -1,16 +1,23 @@
 # 关于DMHY-spider
 
-@(ACGL)[DMHY|spider]
+`**ACGL**` | `DMHY` `spider`
 
 **DMHY-spider**目的在于爬取动漫花园网站，并将字幕组上传的每一条动画所对应的网页和种子分文别类保存到本地文件系统和数据库中。目前数据库使用的是SQLite3，但是今天使用发现数据库大小增长比较快，后续可能更换为PostgresSQL。最终目的是要能够建立一系列规则，智能识别每一条记录是否为我们在追的番剧(根据剧名，但能识别简体繁体日语罗马音和剧名的缩写甚至错写)。功能概述：
  
-- **爬取[动漫花园][1]网站** ：为了降低对服务器的压力，将访问间隔设为了10s；
-- **存储到文件系统和数据库** ：将每一条记录的网页和种子保存到文件系统，并将标题文件大小类型等记录到数据库[SQLite3][2]，以便后续挖掘；
-- **智能识别番剧** ：目前还没实现，也没想好要做成什么样，有想法的可以联系我。
+- [x] **爬取[动漫花园][1]网站** ：为了降低对服务器的压力，将访问间隔设为了10s；
+- [x] **存储到文件系统和数据库** ：将每一条记录的网页和种子保存到文件系统，并将标题文件大小类型等记录到数据库[SQLite3][2]，以便后续挖掘；
+- [ ] **智能识别番剧** ：目前还没实现，也没想好要做成什么样，有想法的可以联系我。
 
 -------------------
 
-[TOC]
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+
+- [关于DMHY-spider](#关于dmhy-spider)
+    - [用法](#用法)
+    - [模块调用](#模块调用)
+    - [参数](#参数)
+
+<!-- markdown-toc end -->
 
 ## 用法
 
@@ -53,10 +60,10 @@ domain = r"https://share.dmhy.org"
 
 path = os.getcwd()
 
-sqlite_db = path + r'\DMHY.db'
-time_delay = 10
+sqlite_db = os.path.join(path, 'DMHY.db')
+time_delay = 0
 	
-warehouse = path + r'\Warehouse'
+warehouse = os.path.join(path, 'Warehouse')
 
 DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
 

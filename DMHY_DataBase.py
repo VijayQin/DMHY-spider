@@ -23,8 +23,8 @@ import time
 import re
 
 
-# ms_path_limit = 260
-ms_path_limit = 247
+# MS_PATH_LIMIT = 260
+MS_PATH_LIMIT = 247
 
 class DMHY_Write_file_exception:
 
@@ -288,8 +288,8 @@ class DMHY_DataBase:
 
     def prune_title (self, path, fileName) :
         joinpath = os.path.join(path, fileName)
-        if ms_path_limit <= len(joinpath) :
-            joinpath = os.path.join(path, fileName[len(path)-(ms_path_limit-1):])
+        if MS_PATH_LIMIT <= len(joinpath) :
+            joinpath = os.path.join(path, fileName[len(path)-(MS_PATH_LIMIT-1):])
         return joinpath
 
 
@@ -311,16 +311,7 @@ class DMHY_DataBase:
                                 str(item_type),
                                 '%02d%02d_%s' % (item_datetime.hour,
                                                 item_datetime.minute,
-                                                item_title))
-        if (ms_path_limit-10) <= len(joinpath) :
-            joinpath = os.path.join(self.warehouse,
-                                    str(item_datetime.year),
-                                    '%02d' % item_datetime.month,
-                                    '%02d' % item_datetime.day,
-                                    item_type,
-                                    '%02d%02d_%s' % (item_datetime.hour,
-                                                    item_datetime.minute,
-                                                    item_title[:(ms_path_limit-11)-len(joinpath)]))
+                                                item_title))[:MS_PATH_LIMIT-10]
         return joinpath
 
 
@@ -358,8 +349,8 @@ if __name__ == '__main__':
 
     # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
     warehouse = os.path.join(path, 'Warehouse')
-    if (ms_path_limit-40) <= len(warehouse) :
-        print u'本地仓库路径过长, 不能超出',str(ms_path_limit-41),u'个字符, 请更改存放路径'
+    if (MS_PATH_LIMIT-40) <= len(warehouse) :
+        print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
 
     print u'正在更新内容, 请稍后'
     DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)

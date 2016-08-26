@@ -272,7 +272,19 @@ class DMHY_DataBase:
                 torrent_url = torrent_urls[0]
                 torrent_url = 'https:' + torrent_url
                 time.sleep(self.time_delay)
-                u = urllib2.urlopen(torrent_url)
+                try :
+                    u = urllib2.urlopen(torrent_url)
+                except urllib2.HTTPError, e:
+                    if 404 == e.code :
+                        print "HTTPError error({0}): {1}".format(e.code, e.reason)
+                    else :
+                        print e.code
+                        print e.reason
+                        raise
+                except Exception as e:
+                    print e.code
+                    print e.reason
+                    raise
                 torrent = u.read()
                 u.close()
                 fileName = self.formulate_title(torrent_url.split('/')[-1])

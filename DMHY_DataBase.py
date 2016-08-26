@@ -274,6 +274,14 @@ class DMHY_DataBase:
                 time.sleep(self.time_delay)
                 try :
                     u = urllib2.urlopen(torrent_url)
+                    torrent = u.read()
+                    u.close()
+                    fileName = self.formulate_title(torrent_url.split('/')[-1])
+                    file_path = self.prune_title(path, fileName)
+                    # with open(file_path, 'wb') as f :
+                    #     f.write(torrent)
+                    with DMHY_Write_file_exception(file_path, 'wb', url) as f :
+                        f.write(torrent)
                 except urllib2.HTTPError, e:
                     if 404 == e.code :
                         print "HTTPError error({0}): {1}".format(e.code, e.reason)
@@ -285,14 +293,6 @@ class DMHY_DataBase:
                     print e.code
                     print e.reason
                     raise
-                torrent = u.read()
-                u.close()
-                fileName = self.formulate_title(torrent_url.split('/')[-1])
-                file_path = self.prune_title(path, fileName)
-                # with open(file_path, 'wb') as f :
-                #     f.write(torrent)
-                with DMHY_Write_file_exception(file_path, 'wb', url) as f :
-                    f.write(torrent)
 
             # add self.new_data
             item = (item_date, item_type, item_title, item_magnet, item_size)

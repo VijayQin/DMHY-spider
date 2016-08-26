@@ -22,6 +22,32 @@ import urllib2
 import time
 import re
 
+
+# ms_path_limit = 260
+ms_path_limit = 247
+
+class DMHY_Write_file_exception:
+
+    def __init__ (self, path, mode, url):
+        self.path = path
+        self.url = url
+        self.write_file = open(path, mode)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, trace):
+        sys.stderr.write( "type:" + str(type) )
+        sys.stderr.write( "value:" + str(value) )
+        sys.stderr.write( "trace:" + str(trace) )
+        sys.stderr.write( "path:" + self.path)
+        sys.stderr.write( "url:" + self.url)
+        self.write_file.close()
+
+    def write(self, content):
+        return self.write_file.write(content)
+
+
 class DMHY_DataBase:
 
     def __init__(self, mode, attr, url, domain, sqlite_db, time_delay, warehouse):
@@ -141,7 +167,7 @@ class DMHY_DataBase:
             # Download updates
             for i in range(update_num) :
                 print ""
-                print "已完成：%d/%d" % (i, update_num)
+                print u"已完成：%d/%d" % (i, update_num)
                 sys.stdout.write("\033[2F") # Cursor up one line
                 self.parse_item(update_list[i], con)
             # Clean up out-of-date items
@@ -162,7 +188,7 @@ class DMHY_DataBase:
     def date_justify(self, date, page) :
         # return 1表示日期还没到, return 0表示要下载, return -1表示日期已过
         item_date = datetime.datetime.strptime(date, r'%Y/%m/%d %H:%M');
-        # 1、更新昨天 2、更新指定日期(格式:2016-08-23) 3、更新时间段(格式:[2016-08-22,2016-08-23])
+        # 1、更新昨天 2、更新指定日期(格式:2016-08-08) 3、更新时间段(格式:[2016-08-05,2016-08-08])
         # 4、自动更新模式 5、更新固定页数
         if self.mode in [1,2,3,4]:
             if 0 < (item_date - self.date_max).total_seconds() :
@@ -226,7 +252,9 @@ class DMHY_DataBase:
             # save html
             html_title = self.formulate_title(url.split('/')[-1])
             file_path = self.prune_title(path, html_title)
-            with open(file_path, 'w') as f_html :
+            # with open(file_path, 'w') as f_html :
+            #     f_html.write(item_html)
+            with DMHY_Write_file_exception(file_path, 'w', url) as f_html :
                 f_html.write(item_html)
 
             # save torrent
@@ -241,7 +269,9 @@ class DMHY_DataBase:
                 u.close()
                 fileName = self.formulate_title(torrent_url.split('/')[-1])
                 file_path = self.prune_title(path, fileName)
-                with open(file_path, 'wb') as f :
+                # with open(file_path, 'wb') as f :
+                #     f.write(torrent)
+                with DMHY_Write_file_exception(file_path, 'wb', url) as f :
                     f.write(torrent)
 
             # add self.new_data
@@ -257,10 +287,10 @@ class DMHY_DataBase:
 
 
     def prune_title (self, path, fileName) :
-        file_path = os.path.join(path, fileName)
-        if 260 <= len(file_path) :
-            file_path = os.path.join(path, fileName[len(file_path)-259:])
-        return file_path
+        joinpath = os.path.join(path, fileName)
+        if ms_path_limit <= len(joinpath) :
+            joinpath = os.path.join(path, fileName[len(path)-(ms_path_limit-1):])
+        return joinpath
 
 
     def formulate_title (self, title) :
@@ -274,21 +304,30 @@ class DMHY_DataBase:
     def formulate_folder_path(self, item_date, item_type, item_title) :
 
         item_datetime = datetime.datetime.strptime(item_date, r'%Y/%m/%d %H:%M')
-        path = os.path.join(self.warehouse,
-                            str(item_datetime.year),
-                            '%02d' % item_datetime.month,
-                            '%02d' % item_datetime.day,
-                            '%02d%02d_%s' % (item_datetime.hour,
-                                            item_datetime.minute,
-                                            item_title))
-
-        return path
+        joinpath = os.path.join(self.warehouse,
+                                str(item_datetime.year),
+                                '%02d' % item_datetime.month,
+                                '%02d' % item_datetime.day,
+                                str(item_type),
+                                '%02d%02d_%s' % (item_datetime.hour,
+                                                item_datetime.minute,
+                                                item_title))
+        if (ms_path_limit-10) <= len(joinpath) :
+            joinpath = os.path.join(self.warehouse,
+                                    str(item_datetime.year),
+                                    '%02d' % item_datetime.month,
+                                    '%02d' % item_datetime.day,
+                                    item_type,
+                                    '%02d%02d_%s' % (item_datetime.hour,
+                                                    item_datetime.minute,
+                                                    item_title[:(ms_path_limit-11)-len(joinpath)]))
+        return joinpath
 
 
 if __name__ == '__main__':
 
-    print u"请输入模式:1、更新昨天 2、更新指定日期(格式:2016-08-23)"
-    print u"           3、更新时间段(格式:[2016-08-22,2016-08-23])"
+    print u"请输入模式:1、更新昨天 2、更新指定日期(格式:2016-08-08)"
+    print u"           3、更新时间段(格式:[2016-08-05,2016-08-08])"
     print u'           4、自动更新模式 5、更新固定页数'
     mode = int(raw_input())
 
@@ -296,10 +335,10 @@ if __name__ == '__main__':
         print u'即将更新昨天的内容'
         attr = ''
     elif 2 == mode :
-        print u'请输入要更新的日期(格式:2016-08-23)'
+        print u'请输入要更新的日期(格式:2016-08-08)'
         attr = str(raw_input())
     elif 3 == mode :
-        print u"请输入要更新的时间段(格式:[2016-08-22,2016-08-23])"
+        print u"请输入要更新的时间段(格式:[2016-08-05,2016-08-08])"
         attr = str(raw_input())
     elif 4 == mode :
         print u'即将进入自动更新模式'
@@ -319,6 +358,8 @@ if __name__ == '__main__':
 
     # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
     warehouse = os.path.join(path, 'Warehouse')
+    if (ms_path_limit-40) <= len(warehouse) :
+        print u'本地仓库路径过长, 不能超出',str(ms_path_limit-41),u'个字符, 请更改存放路径'
 
     print u'正在更新内容, 请稍后'
     DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)

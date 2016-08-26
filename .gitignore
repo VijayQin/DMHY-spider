@@ -1,7 +1,12 @@
 # Windows:
-Thumbs.db
-ehthumbs.db
 Desktop.ini
+
+# Cache and backup
 bk/*
 Warehouse/*
-DMHY.db
+
+# Database
+*.db
+
+# Binary
+*.pyc

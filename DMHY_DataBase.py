@@ -37,11 +37,15 @@ class DMHY_Write_file_exception:
         return self
 
     def __exit__(self, type, value, trace):
-        sys.stderr.write( "type:" + str(type) )
-        sys.stderr.write( "value:" + str(value) )
-        sys.stderr.write( "trace:" + str(trace) )
-        sys.stderr.write( "path:" + self.path)
-        sys.stderr.write( "url:" + self.url)
+        if type != None :
+            print "type:", type
+            print "value:", value
+            print "trace:", trace
+            try :
+                print "path:", self.path
+            except :
+                print "path:", self.path.encode("gbk", "ignore")
+            print "url:", self.url
         self.write_file.close()
 
     def write(self, content):
@@ -215,7 +219,11 @@ class DMHY_DataBase:
         item_uploader = self.domain + item_uploader
         item_finish = False
 
-        print u"[正在下载] " + item_title
+        try:
+            print u"[正在下载] " + item_title
+        except Exception, e:
+            print (u"[正在下载] " + item_title).encode("GBK", 'ignore')
+            # print (u"[正在下载] " + item_title).encode("GB18030")
 
         # 为了不造成服务器太大负担, 所以每次请求间隔10s
         # 所以可能会出现,请求第二页的时候,已经有字幕组新上传了动画,此时第一页的最后几条会在第二页出现
@@ -282,7 +290,10 @@ class DMHY_DataBase:
 
         sys.stdout.write("\033[F") # Cursor up one line
         sys.stdout.write("\033[K") # Clear to the end of line
-        print u"[完成] " + item_title
+        try:
+            print u"[完成] " + item_title
+        except Exception, e:
+            print (u"[完成] " + item_title).encode("GBK", 'ignore')
         sys.stdout.write("\033[K") # Clear to the end of line
 
 
@@ -319,7 +330,7 @@ if __name__ == '__main__':
 
     print u"请输入模式:1、更新昨天 2、更新指定日期(格式:2016-08-08)"
     print u"           3、更新时间段(格式:[2016-08-05,2016-08-08])"
-    print u'           4、自动更新模式 5、更新固定页数'
+    print u'           4、自动更新模式(不要在第一次运行时使用) 5、更新固定页数'
     mode = int(raw_input())
 
     if 1 == mode :
@@ -332,7 +343,7 @@ if __name__ == '__main__':
         print u"请输入要更新的时间段(格式:[2016-08-05,2016-08-08])"
         attr = str(raw_input())
     elif 4 == mode :
-        print u'即将进入自动更新模式'
+        print u'即将进入自动更新模式(不要在第一次运行时使用)'
         attr = ''
     elif 5 == mode :
         print u'请输入要更新的页数'

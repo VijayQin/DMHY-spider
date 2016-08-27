@@ -4,9 +4,13 @@
 Created on Wed Aug 23 19:25:58 2016
 
 if you have any questions,
-please feel free to contact me.
+please feel free to contact us.
+
+Version: 1.1.0
+latest modified at: 
 
 @author: Vijay Qin
+@last-modifier: Vijay Qin
 
 """
 
@@ -54,18 +58,40 @@ class DMHY_Write_file_exception:
 
 class DMHY_DataBase:
 
-    def __init__(self, mode, attr, url, domain, sqlite_db, time_delay, warehouse):
+    def __init__(self, mode, attr, url=None, domain=None, 
+        sqlite_db=None, time_delay=None, warehouse=None):
 
         self.mode = mode
         self.attr = attr
-        self.url = url
-        self.domain = domain
-        self.sqlite_db = sqlite_db
-        self.time_delay = time_delay
-        self.warehouse = warehouse
+        config = self.init_config()
+        path = os.getcwd()
+
+        if url is None:
+            self.url = config['url']
+        else :
+            self.url = url
+        if domain is None:
+            self.domain = config['domain']
+        else :
+            self.domain = domain
+        if sqlite_db is None:
+            self.sqlite_db = os.path.join(path, 'DMHY.db')
+        else:
+            self.sqlite_db = sqlite_db
+        if time_delay is None:
+            self.time_delay = float(config['time_delay'])
+        else:
+            self.time_delay = time_delay
+        if warehouse is None:
+            self.warehouse = os.path.join(path, 'Warehouse')
+        else:
+            self.warehouse = warehouse
+        if (MS_PATH_LIMIT-40) <= len(self.warehouse) :
+            print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
+            return
         self.new_data = []
 
-        with sqlite3.connect(sqlite_db) as con :
+        with sqlite3.connect(self.sqlite_db) as con :
             cu = con.cursor()
             create_sql = r'''
                 create table if not exists DMHY_DataBase (
@@ -84,29 +110,29 @@ class DMHY_DataBase:
             cu.close()
             con.commit()
 
-        if not os.path.exists(warehouse) :
-            os.makedirs(warehouse)
+        if not os.path.exists(self.warehouse) :
+            os.makedirs(self.warehouse)
 
         # 1、更新昨天
-        if 1 == mode :
+        if 1 == self.mode :
             yesterday = datetime.date.today() - datetime.timedelta(days=1)
             self.date_min = datetime.datetime.combine(yesterday, datetime.time.min)
             self.date_max = datetime.datetime.combine(yesterday, datetime.time.max)
         # 2、更新指定日期(格式:2016-08-23)
-        elif 2 == mode :
-            target_date = datetime.datetime.strptime(attr, r'%Y-%m-%d')
+        elif 2 == self.mode :
+            target_date = datetime.datetime.strptime(self.attr, r'%Y-%m-%d')
             self.date_min = datetime.datetime.combine(target_date, datetime.time.min)
             self.date_max = datetime.datetime.combine(target_date, datetime.time.max)
         # 3、更新时间段(格式:['2016-08-22','2016-08-23'])
-        elif 3 == mode :
-            target_date = attr.split(',')
+        elif 3 == self.mode :
+            target_date = self.attr.split(',')
             target_date_min = datetime.datetime.strptime(target_date[0][1:], r'%Y-%m-%d')
             target_date_max = datetime.datetime.strptime(target_date[1][:-1], r'%Y-%m-%d')
             self.date_min = datetime.datetime.combine(target_date_min, datetime.time.min)
             self.date_max = datetime.datetime.combine(target_date_max, datetime.time.max)
         # 4、自动更新模式
-        elif 4 == mode :
-            with sqlite3.connect(sqlite_db) as con :
+        elif 4 == self.mode :
+            with sqlite3.connect(self.sqlite_db) as con :
                 cu = con.cursor()
                 select_sql = r'''
                     select
@@ -128,6 +154,18 @@ class DMHY_DataBase:
                     self.date_max = datetime.datetime.combine(datetime.date.today(), datetime.time.max)
                 cu.close()
                 con.commit()
+
+
+    def init_config(self) :
+        configuration = {}
+        with open(r'DMHY_Configuration.cfg','r') as cfg:
+            config = cfg.readlines()
+            for item in config :
+                attr = "".join(item.split())
+                if '' != attr and '#' != attr[0] :
+                    attr = attr.split('=')
+                    configuration[attr[0]] = attr[1]
+        return configuration
 
 
     def fetch_update_list(self) :
@@ -361,20 +399,22 @@ if __name__ == '__main__':
         print u'请输入要更新的页数'
         attr = int(raw_input())
 
-    url = r"https://share.dmhy.org/topics/list/page/"
-    domain = r"https://share.dmhy.org"
+    # url = r"https://share.dmhy.org/topics/list/page/"
+    # domain = r"https://share.dmhy.org"
 
-    path = os.getcwd()
+    # path = os.getcwd()
 
-    # sqlite_db = r"D:\Data\Desktop\Workspace\test\DMHY\DMHY.db"
-    sqlite_db = os.path.join(path, 'DMHY.db')
-    time_delay = 0
+    # # sqlite_db = r"D:\Data\Desktop\Workspace\test\DMHY\DMHY.db"
+    # sqlite_db = os.path.join(path, 'DMHY.db')
+    # time_delay = 0
 
-    # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
-    warehouse = os.path.join(path, 'Warehouse')
-    if (MS_PATH_LIMIT-40) <= len(warehouse) :
-        print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
+    # # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
+    # warehouse = os.path.join(path, 'Warehouse')
+    # if (MS_PATH_LIMIT-40) <= len(warehouse) :
+    #     print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
+    #     return
 
     print u'正在更新内容, 请稍后'
-    DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
+    # DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
+    DataBase = DMHY_DataBase(mode, attr)
     DataBase.start_requests()

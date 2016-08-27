@@ -16,6 +16,7 @@
     - [用法](#用法)
     - [模块调用](#模块调用)
     - [参数](#参数)
+    - [配置文件编写](#配置文件编写)
 
 <!-- markdown-toc end -->
 
@@ -57,21 +58,36 @@ $ python DMHY_DataBase.py
 ## 模块调用
 ``` python
 import DMHY_DataBase.py
-url = r"https://share.dmhy.org/topics/list/page/"
-domain = r"https://share.dmhy.org"
+# url = r"https://share.dmhy.org/topics/list/page/"
+# domain = r"https://share.dmhy.org"
 
-path = os.getcwd()
+# path = os.getcwd()
 
-sqlite_db = os.path.join(path, 'DMHY.db')
-time_delay = 0
-	
-warehouse = os.path.join(path, 'Warehouse')
+# # sqlite_db = r"D:\Data\Desktop\Workspace\test\DMHY\DMHY.db"
+# sqlite_db = os.path.join(path, 'DMHY.db')
+# time_delay = 0
 
-DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
+# # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
+# warehouse = os.path.join(path, 'Warehouse')
+# if (MS_PATH_LIMIT-40) <= len(warehouse) :
+#     print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
+#     return
 
+print u'正在更新内容, 请稍后'
+# DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
+DataBase = DMHY_DataBase(mode, attr)
 DataBase.start_requests()
 ```
 自己写一个模块来调用也可以。
+``` python
+DMHY_DataBase(mode, attr, url=None, domain=None, 
+        sqlite_db=None, time_delay=None, warehouse=None):
+```
+模式mode，和参数attr是必须要输入的。其余的参数都有默认值。
+
+其中url和domain默认是DMHY现在的域名, time_delay默认是0。以上三项可在同目录底下的配置文件DMHY_Configuration.cfg中设置。
+
+其余的数据库路径sqlite_db，和种子仓库路径warehouse，如果不设，默认在当前目录底下。设了就按设的来。
 
 ## 参数
 mode就是前面的1,2,3,4,5.
@@ -81,6 +97,16 @@ sqlite_db是数据库存放的路径。
 time_delay是访问间隔。
 warehouse是网页和种子存放的路径
 
+## 配置文件编写
+空行随便空，井号#开头是注释。
+
+格式是key = value。不读取空格，所以key和value(尤其是路径)，不要包含空格。
+
+**路径不要包含空格**
+
+**路径不要包含空格**
+
+**路径不要包含空格**
 
   [1]: http://share.dmhy.org
   [2]: https://sqlite.org/

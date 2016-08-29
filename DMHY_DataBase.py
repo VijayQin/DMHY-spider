@@ -6,8 +6,8 @@ Created on Wed Aug 23 19:25:58 2016
 if you have any questions,
 please feel free to contact us.
 
-Version: 1.1.0
-latest modified at: 
+Version: 1.1.1
+latest modified at: Aug 29 22:23:27 2016
 
 @author: Vijay Qin
 @last-modifier: Vijay Qin
@@ -59,36 +59,57 @@ class DMHY_Write_file_exception:
 class DMHY_DataBase:
 
     def __init__(self, mode, attr, url=None, domain=None, 
-        sqlite_db=None, time_delay=None, warehouse=None):
+        sqlite_db=None, time_delay=None, warehouse=None,
+        auto_download=None):
 
         self.mode = mode
         self.attr = attr
-        config = self.init_config()
+        config = self.init_config(url, domain)
         path = os.getcwd()
 
         if url is None:
             self.url = config['url']
         else :
             self.url = url
+
         if domain is None:
             self.domain = config['domain']
         else :
             self.domain = domain
+
         if sqlite_db is None:
             self.sqlite_db = os.path.join(path, 'DMHY.db')
         else:
             self.sqlite_db = sqlite_db
+
         if time_delay is None:
-            self.time_delay = float(config['time_delay'])
+            if config.has_key('time_delay'):
+                self.time_delay = float(config['time_delay'])
+            else:
+                self.time_delay = 0
         else:
             self.time_delay = time_delay
+
         if warehouse is None:
             self.warehouse = os.path.join(path, 'Warehouse')
         else:
             self.warehouse = warehouse
+
+        if auto_download is None:
+            if config.has_key('auto_download') :
+                if config['auto_download'][0] in ['N','n'] :
+                    self.auto_download = False
+                else :
+                    self.auto_download = True
+            else :
+                self.auto_download = False
+        else:
+            self.auto_download = auto_download
+
         if (MS_PATH_LIMIT-40) <= len(self.warehouse) :
             print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
             return
+
         self.new_data = []
 
         with sqlite3.connect(self.sqlite_db) as con :
@@ -156,7 +177,7 @@ class DMHY_DataBase:
                 con.commit()
 
 
-    def init_config(self) :
+    def init_config(self, url, domain) :
         configuration = {}
         with open(r'DMHY_Configuration.cfg','r') as cfg:
             config = cfg.readlines()
@@ -165,6 +186,12 @@ class DMHY_DataBase:
                 if '' != attr and '#' != attr[0] :
                     attr = attr.split('=')
                     configuration[attr[0]] = attr[1]
+        if url is None and not configuration.has_key('url') :
+            print 'parameter url has not been set in configuration!!!'
+            raise Exception('parameter url has not been set in configuration!!!')
+        if domain is None and not configuration.has_key('domain') :
+            print 'parameter domain has not been set in configuration!!!'
+            raise Exception('parameter domain has not been set in configuration!!!')
         return configuration
 
 
@@ -282,7 +309,7 @@ class DMHY_DataBase:
         cu.execute(select_sql, (item_date, item_type, item_title, item_size, item_magnet))
         if 0 == cu.fetchall()[0][0]:
             path = self.formulate_folder_path(item_date, item_type, item_title)
-            if not os.path.exists(path) :
+            if not os.path.exists(path) and self.auto_download :
                 os.makedirs(path)
             item_attach = path
 
@@ -295,42 +322,43 @@ class DMHY_DataBase:
             item_html = response.text
             response.close()
 
-            # save html
-            html_title = self.formulate_title(url.split('/')[-1])
-            file_path = self.prune_title(path, html_title)
-            # with open(file_path, 'w') as f_html :
-            #     f_html.write(item_html)
-            with DMHY_Write_file_exception(file_path, 'w', url) as f_html :
-                f_html.write(item_html)
+            if self.auto_download :
+                # save html
+                html_title = self.formulate_title(url.split('/')[-1])
+                file_path = self.prune_title(path, html_title)
+                # with open(file_path, 'w') as f_html :
+                #     f_html.write(item_html)
+                with DMHY_Write_file_exception(file_path, 'w', url) as f_html :
+                    f_html.write(item_html)
 
-            # save torrent
-            tree = html.fromstring(item_html)
-            torrent_urls = tree.xpath('//div[@id="resource-tabs"]/div/p[1]/a/@href')
-            if 1<= len(torrent_urls) :
-                torrent_url = torrent_urls[0]
-                torrent_url = 'https:' + torrent_url
-                time.sleep(self.time_delay)
-                try :
-                    u = urllib2.urlopen(torrent_url)
-                    torrent = u.read()
-                    u.close()
-                    fileName = self.formulate_title(torrent_url.split('/')[-1])
-                    file_path = self.prune_title(path, fileName)
-                    # with open(file_path, 'wb') as f :
-                    #     f.write(torrent)
-                    with DMHY_Write_file_exception(file_path, 'wb', url) as f :
-                        f.write(torrent)
-                except urllib2.HTTPError, e:
-                    if 404 == e.code :
-                        print "HTTPError error({0}): {1}".format(e.code, e.reason)
-                    else :
+                # save torrent
+                tree = html.fromstring(item_html)
+                torrent_urls = tree.xpath('//div[@id="resource-tabs"]/div/p[1]/a/@href')
+                if 1<= len(torrent_urls) :
+                    torrent_url = torrent_urls[0]
+                    torrent_url = 'https:' + torrent_url
+                    time.sleep(self.time_delay)
+                    try :
+                        u = urllib2.urlopen(torrent_url)
+                        torrent = u.read()
+                        u.close()
+                        fileName = self.formulate_title(torrent_url.split('/')[-1])
+                        file_path = self.prune_title(path, fileName)
+                        # with open(file_path, 'wb') as f :
+                        #     f.write(torrent)
+                        with DMHY_Write_file_exception(file_path, 'wb', url) as f :
+                            f.write(torrent)
+                    except urllib2.HTTPError, e:
+                        if 404 == e.code :
+                            print "HTTPError error({0}): {1}".format(e.code, e.reason)
+                        else :
+                            print e.code
+                            print e.reason
+                            raise
+                    except Exception as e:
                         print e.code
                         print e.reason
                         raise
-                except Exception as e:
-                    print e.code
-                    print e.reason
-                    raise
 
             # add self.new_data
             item = (item_date, item_type, item_title, item_magnet, item_size)
@@ -414,7 +442,14 @@ if __name__ == '__main__':
     #     print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
     #     return
 
+    print u'请问要自动下载网页和种子吗?默认[Yes]'
+    auto_download = str(raw_input())
+    if '' != auto_download and auto_download[0] in ['N','n','F','f'] :
+        auto_download = False
+    else :
+        auto_download = True
+
     print u'正在更新内容, 请稍后'
-    # DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
-    DataBase = DMHY_DataBase(mode, attr)
+    # DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse, auto_download)
+    DataBase = DMHY_DataBase(mode, attr, auto_download=auto_download)
     DataBase.start_requests()

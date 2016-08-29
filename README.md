@@ -69,19 +69,16 @@ import DMHY_DataBase.py
 
 # # warehouse = r'D:\Data\Desktop\Workspace\test\DMHY\Warehouse'
 # warehouse = os.path.join(path, 'Warehouse')
-# if (MS_PATH_LIMIT-40) <= len(warehouse) :
-#     print u'本地仓库路径过长, 不能超出',str(MS_PATH_LIMIT-41),u'个字符, 请更改存放路径'
-#     return
 
-print u'正在更新内容, 请稍后'
-# DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse)
+# DataBase = DMHY_DataBase(mode, attr, url, domain, sqlite_db, time_delay, warehouse, auto_download)
 DataBase = DMHY_DataBase(mode, attr)
 DataBase.start_requests()
 ```
 自己写一个模块来调用也可以。
 ``` python
 DMHY_DataBase(mode, attr, url=None, domain=None, 
-        sqlite_db=None, time_delay=None, warehouse=None):
+        sqlite_db=None, time_delay=None, warehouse=None,
+        auto_download=None):
 ```
 模式mode，和参数attr是必须要输入的。其余的参数都有默认值。
 
@@ -89,13 +86,22 @@ DMHY_DataBase(mode, attr, url=None, domain=None,
 
 其余的数据库路径sqlite_db，和种子仓库路径warehouse，如果不设，默认在当前目录底下。设了就按设的来。
 
+auto_download设置的是检查网页的时候除了插进数据库，是否需要将网页和种子保存到本地。Boolean类型。默认为真，即要保存到本地。
+
 ## 参数
 mode就是前面的1,2,3,4,5.
+
 attr就是2,3,5里面输入的时间段和页码。1,4的时候attr随便。
+
 url和domain是DMHY的域名。
+
 sqlite_db是数据库存放的路径。
+
 time_delay是访问间隔。
-warehouse是网页和种子存放的路径
+
+warehouse是网页和种子存放的路径。
+
+auto_download是要不要自动下载网页和种子到本地。
 
 ## 配置文件编写
 空行随便空，井号#开头是注释。
@@ -107,6 +113,8 @@ warehouse是网页和种子存放的路径
 **路径不要包含空格**
 
 **路径不要包含空格**
+
+**其中url和domain两项为必配项。调用的参数和配置文件两处中至少有一处有设置，其中调用时参数的优先级高于配置文件中的设置。**
 
   [1]: http://share.dmhy.org
   [2]: https://sqlite.org/

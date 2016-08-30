@@ -6,8 +6,8 @@ Created on Wed Aug 23 19:25:58 2016
 if you have any questions,
 please feel free to contact us.
 
-Version: 1.1.1
-latest modified at: Aug 29 22:23:27 2016
+Version: 2.0.0
+latest modified at: Aug 30 11:38:06 2016
 
 @author: Vijay Qin
 @last-modifier: Vijay Qin
@@ -120,6 +120,7 @@ class DMHY_DataBase:
                     date VARCHAR(20),
                     type VARCHAR(10),
                     title VARCHAR(255),
+                    link VARCHAR(255),
                     magnet VARCHAR(255),
                     size VARCHAR(10),
                     uploader VARCHAR(30),
@@ -241,14 +242,7 @@ class DMHY_DataBase:
                 self.parse_item(update_list[i], con)
             # Clean up out-of-date items
             print u"正在清除过期的内容..."
-            insert_sql = '''
-                insert into DMHY_DataBase
-                    values(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                '''
-            cu = con.cursor()
-            for d in self.new_data :
-                cu.execute(insert_sql, d)
-            cu.close
+            self.insert_new_data( self.new_data, con)
             con.commit()
             print u"内容更新完毕"
             return 0
@@ -310,25 +304,25 @@ class DMHY_DataBase:
         if 0 == cu.fetchall()[0][0]:
             path = self.formulate_folder_path(item_date, item_type, item_title)
             if not os.path.exists(path) and self.auto_download :
-                os.makedirs(path)
-            item_attach = path
+                os.makedirs(path)            
 
             # get item
-            url = self.domain + data.xpath('td[@class="title"]/a/@href')[0]
+            item_link = self.domain + data.xpath('td[@class="title"]/a/@href')[0]
             user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
             headers = {'User-Agent': user_agent}
             time.sleep(self.time_delay)
-            response = requests.get(url, headers)
+            response = requests.get(item_link, headers)
             item_html = response.text
             response.close()
 
             if self.auto_download :
+                item_attach = path
                 # save html
-                html_title = self.formulate_title(url.split('/')[-1])
+                html_title = self.formulate_title(item_link.split('/')[-1])
                 file_path = self.prune_title(path, html_title)
                 # with open(file_path, 'w') as f_html :
                 #     f_html.write(item_html)
-                with DMHY_Write_file_exception(file_path, 'w', url) as f_html :
+                with DMHY_Write_file_exception(file_path, 'w', item_link) as f_html :
                     f_html.write(item_html)
 
                 # save torrent
@@ -346,7 +340,7 @@ class DMHY_DataBase:
                         file_path = self.prune_title(path, fileName)
                         # with open(file_path, 'wb') as f :
                         #     f.write(torrent)
-                        with DMHY_Write_file_exception(file_path, 'wb', url) as f :
+                        with DMHY_Write_file_exception(file_path, 'wb', item_link) as f :
                             f.write(torrent)
                     except urllib2.HTTPError, e:
                         if 404 == e.code :
@@ -359,9 +353,11 @@ class DMHY_DataBase:
                         print e.code
                         print e.reason
                         raise
+            else :
+                item_attach = ''
 
             # add self.new_data
-            item = (item_date, item_type, item_title, item_magnet, item_size)
+            item = (item_date, item_type, item_title, item_link, item_magnet, item_size)
             item = item + (item_uploader, item_html, item_attach, item_finish)
             self.new_data.insert(0, item)
         cu.close()
@@ -397,11 +393,64 @@ class DMHY_DataBase:
                                 str(item_datetime.year),
                                 '%02d' % item_datetime.month,
                                 '%02d' % item_datetime.day,
-                                str(item_type),
+                                item_type,
                                 '%02d%02d_%s' % (item_datetime.hour,
                                                 item_datetime.minute,
                                                 item_title))[:MS_PATH_LIMIT-10]
         return joinpath
+
+
+    def insert_new_data(self, data, con) :
+        insert_sql = '''
+            insert into DMHY_DataBase
+                values(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            '''
+        cu = con.cursor()
+        for d in data :
+            try :
+                cu.execute(insert_sql, d)
+            except :
+                print 'Error date:', d[0]
+                print 'Error title:', d[2]
+                print 'Error link:', d[3]
+                try :
+                    cu.execute(insert_sql, (d[0],'','','','','','','','',False))
+                except :
+                    print 'there is error in date:', d[0]
+                try :
+                    cu.execute(insert_sql, ('',d[1],'','','','','','','',False))
+                except :
+                    print 'there is error in type:', d[1]
+                try :
+                    cu.execute(insert_sql, ('','',d[2],'','','','','','',False))
+                except :
+                    print 'there is error in title:', d[2]
+                try :
+                    cu.execute(insert_sql, ('','','',d[3],'','','','','',False))
+                except :
+                    print 'there is error in link:', d[3]
+                try :
+                    cu.execute(insert_sql, ('','','','',d[4],'','','','',False))
+                except :
+                    print 'there is error in magnet:', d[4]
+                try :
+                    cu.execute(insert_sql, ('','','','','',d[5],'','','',False))
+                except :
+                    print 'there is error in size:', d[5]
+                try :
+                    cu.execute(insert_sql, ('','','','','','',d[6],'','',False))
+                except :
+                    print 'there is error in uploader:', d[6]
+                try :
+                    cu.execute(insert_sql, ('','','','','','','',d[7],'',False))
+                except :
+                    print 'there is error in HTML:', d[7]
+                try :
+                    cu.execute(insert_sql, ('','','','','','','','',d[8],False))
+                except :
+                    print 'there is error in attach:', d[8]
+                raise
+        cu.close()
 
 
 if __name__ == '__main__':

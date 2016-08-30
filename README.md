@@ -14,6 +14,7 @@
 
 - [关于DMHY-spider](#关于dmhy-spider)
     - [用法](#用法)
+    - [数据库](#数据库)
     - [模块调用](#模块调用)
     - [参数](#参数)
     - [配置文件编写](#配置文件编写)
@@ -54,6 +55,36 @@ $ python DMHY_DataBase.py
 **第一次运行不要使用4**
 
 重要的事情说三遍。
+
+## 数据库
+``` python
+create table if not exists DMHY_DataBase (
+    id INTEGER PRIMARY KEY,
+    date VARCHAR(20),
+    type VARCHAR(10),
+    title VARCHAR(255),
+    link VARCHAR(255),
+    magnet VARCHAR(255),
+    size VARCHAR(10),
+    uploader VARCHAR(30),
+    HTML TEXT,
+    attach VARCHAR(255),
+    finish BOOLEAN
+)
+```
+id是数据库自增的主键。
+
+date是该条记录字幕组的上传日期。
+
+type, title, link, magnet, size, uploader分别对应资源的类型, 标题, 网页链接, 资源磁链, 资源总大小和上传者。
+
+**其中link字段为2.0.0及以后版本新增, 会导致1.X版本的数据库不可用，请1.X版本使用者删除数据库重建。**
+
+HTML是资源对应网页的数据库备份, 虽然会占比较大的空间, 但出于后续挖掘现在没有的字段数据的考量, 还是决定先保存着。
+
+attach是资源网页和种子在本地磁盘存储的位置。如果由于设置auto_download = False, 使得网页和种子没有下载, 那么该字段为空''。
+
+finish是资源是否已经提醒我更新，对应第三项功能，目前尚未完成所以暂时全为False。
 
 ## 模块调用
 ``` python

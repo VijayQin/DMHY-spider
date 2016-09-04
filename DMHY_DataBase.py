@@ -6,8 +6,8 @@ Created on Wed Aug 23 19:25:58 2016
 if you have any questions,
 please feel free to contact us.
 
-Version: 2.0.0
-latest modified at: Aug 30 11:38:06 2016
+Version: 2.0.1
+latest modified at: Sep 4 15:08:35 2016
 
 @author: Vijay Qin
 @last-modifier: Vijay Qin
@@ -67,6 +67,7 @@ class DMHY_DataBase:
         config = self.init_config(url, domain)
         path = os.getcwd()
 
+        self.config = config
         if url is None:
             self.url = config['url']
         else :
@@ -206,7 +207,11 @@ class DMHY_DataBase:
         update_list = []
         while True :
             # time.sleep(self.time_delay)
-            response = requests.get(self.url + str(page), headers)
+            if self.config.has_key('https_security_certificate_check') and  \
+                False == self.config.has_key('https_security_certificate_check') :
+                response = requests.get(self.url + str(page), headers=headers, verify=False)
+            else :
+                response = requests.get(self.url + str(page), headers=headers)
             tree = html.fromstring(response.content)
             response.close()
             data_list = tree.xpath('//table[@id="topic_list"]/tbody/tr')
@@ -311,7 +316,11 @@ class DMHY_DataBase:
             user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
             headers = {'User-Agent': user_agent}
             time.sleep(self.time_delay)
-            response = requests.get(item_link, headers)
+            if self.config.has_key('https_security_certificate_check') and  \
+                False == self.config.has_key('https_security_certificate_check') :
+                response = requests.get(item_link, headers=headers, verify=False)
+            else :
+                response = requests.get(item_link, headers=headers)
             item_html = response.text
             response.close()
 
@@ -333,13 +342,26 @@ class DMHY_DataBase:
                     torrent_url = 'https:' + torrent_url
                     time.sleep(self.time_delay)
                     try :
+                        # # using request
+                        # if self.config.has_key('https_security_certificate_check') and  \
+                        #     False == self.config.has_key('https_security_certificate_check') :
+                        #     u = requests.get(torrent_url, stream=True, verify=False)
+                        # else :
+                        #     u = requests.get(torrent_url, stream=True)
+                        # fileName = self.formulate_title(torrent_url.split('/')[-1])
+                        # file_path = self.prune_title(path, fileName)
+                        # with DMHY_Write_file_exception(file_path, 'wb', item_link) as f :
+                        #     for torrent in u.iter_content(chunk_size=1024):
+                        #         f.write(torrent)
+                        #         f.flush()
+                        # u.close()
+
+                        # using urllib2
                         u = urllib2.urlopen(torrent_url)
                         torrent = u.read()
                         u.close()
                         fileName = self.formulate_title(torrent_url.split('/')[-1])
                         file_path = self.prune_title(path, fileName)
-                        # with open(file_path, 'wb') as f :
-                        #     f.write(torrent)
                         with DMHY_Write_file_exception(file_path, 'wb', item_link) as f :
                             f.write(torrent)
                     except urllib2.HTTPError, e:

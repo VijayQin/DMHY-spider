@@ -147,5 +147,11 @@ auto_download是要不要自动下载网页和种子到本地。
 
 **其中url和domain两项为必配项。调用的参数和配置文件两处中至少有一处有设置，其中调用时参数的优先级高于配置文件中的设置。**
 
+time_delay是访问间隔。
+
+auto_download是要不要自动下载网页和种子到本地。
+
+https_security_certificate_check为False表示不检查https的安全性。
+
   [1]: http://share.dmhy.org
   [2]: https://sqlite.org/

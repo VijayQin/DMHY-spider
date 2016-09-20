@@ -6,8 +6,8 @@ Created on Wed Aug 23 19:25:58 2016
 if you have any questions,
 please feel free to contact us.
 
-Version: 2.0.1
-latest modified at: Sep 4 15:08:35 2016
+Version: 2.0.2
+latest modified at: Sep 20 12:03:57 2016
 
 @author: Vijay Qin
 @last-modifier: Vijay Qin
@@ -177,7 +177,31 @@ class DMHY_DataBase:
                     self.date_max = datetime.datetime.combine(datetime.date.today(), datetime.time.max)
                 cu.close()
                 con.commit()
-
+        # 4、更新至昨天
+        elif 6 == self.mode :
+            with sqlite3.connect(self.sqlite_db) as con :
+                cu = con.cursor()
+                select_sql = r'''
+                    select
+                        date
+                    from
+                        DMHY_DataBase
+                    ORDER BY
+                        date DESC
+                    LIMIT 1
+                    '''
+                cu.execute(select_sql)
+                date = cu.fetchall()
+                yesterday = datetime.date.today() - datetime.timedelta(days=1)
+                if [] != date :
+                    date = date[0][0]
+                    self.date_min = datetime.datetime.strptime(date, r'%Y/%m/%d %H:%M')
+                    self.date_max = datetime.datetime.combine(yesterday, datetime.time.max)
+                else :
+                    self.date_min = datetime.datetime.fromtimestamp(0.0)
+                    self.date_max = datetime.datetime.combine(yesterday, datetime.time.max)
+                cu.close()
+                con.commit()
 
     def init_config(self, url, domain) :
         configuration = {}
@@ -258,8 +282,9 @@ class DMHY_DataBase:
         item_date = datetime.datetime.strptime(date, r'%Y/%m/%d %H:%M');
         # 1、更新昨天 2、更新指定日期(格式:2016-08-08) 3、更新时间段(格式:[2016-08-05,2016-08-08])
         # 4、自动更新模式 5、更新固定页数
-        if self.mode in [1,2,3,4]:
-            if 0 < (item_date - self.date_max).total_seconds() :
+        # 6、更新至昨天
+        if self.mode in [1,2,3,4,6]:
+            if 0 <= (item_date - self.date_max).total_seconds() :
                 return 1
             elif 0 <= (item_date - self.date_min).total_seconds() :
                 return 0
@@ -480,6 +505,7 @@ if __name__ == '__main__':
     print u"请输入模式:1、更新昨天 2、更新指定日期(格式:2016-08-08)"
     print u"           3、更新时间段(格式:[2016-08-05,2016-08-08])"
     print u'           4、自动更新模式(不要在第一次运行时使用) 5、更新固定页数'
+    print u'           6、更新至昨天(safe mode)(不要在第一次运行时使用)'
     mode = int(raw_input())
 
     if 1 == mode :
@@ -497,6 +523,9 @@ if __name__ == '__main__':
     elif 5 == mode :
         print u'请输入要更新的页数'
         attr = int(raw_input())
+    elif 6 == mode :
+        print u'即将更新至昨天(不要在第一次运行时使用)'
+        attr = ''
 
     # url = r"https://share.dmhy.org/topics/list/page/"
     # domain = r"https://share.dmhy.org"
